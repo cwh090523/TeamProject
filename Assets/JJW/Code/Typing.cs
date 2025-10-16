@@ -14,6 +14,9 @@ public class Typing : MonoBehaviour
     public float typingSpeed = 0.05f;
 
     public float lineDelay = 1f;
+    
+    private int lineIndex = 0;
+    private bool isTyping = false;
 
     private void Start()
     {
@@ -25,27 +28,25 @@ public class Typing : MonoBehaviour
 
     private void Update()
     {
-        if (Keyboard.current.spaceKey.wasPressedThisFrame)
+        if (Keyboard.current.spaceKey.wasPressedThisFrame && !isTyping)
         {
-            
+            StartCoroutine(PlayTypingEffect());
         }
     }
 
     public void StartTyping()
     {
-        StopAllCoroutines();
         StartCoroutine(PlayTypingEffect());
     }
-
+    
     private IEnumerator PlayTypingEffect()
     {
+        isTyping = true;
         uiText.text = "";
-
-        for (int i = 0; i < lines.Length; i++)
-        {
-                yield return StartCoroutine(TypeLine(lines[i]));
-                yield return new WaitForSeconds(lineDelay);
-        }
+        yield return StartCoroutine(TypeLine(lines[lineIndex]));
+        yield return new WaitForSeconds(lineDelay);
+        lineIndex++;
+        isTyping = false;
     }
 
     private IEnumerator TypeLine(string line)
