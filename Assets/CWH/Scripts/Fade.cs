@@ -1,6 +1,6 @@
+using System;
 using System.Collections;
 using UnityEngine;
-using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
 namespace CWH
@@ -8,14 +8,17 @@ namespace CWH
 
     public class Fade : MonoBehaviour
     {
+        public static Fade instance;
+        public Typing typing;
         public bool IsFadeIn =false;
         public Image image;
-        public Image background;
-        public Sprite[] sprites; // 다음 이미지 목록
         private int currentIndex = 0;
+        public Action OnFadeIn;
+        public GameObject texts;
 
         private void Start()
         {
+            instance = this;
             if (IsFadeIn)
             {
                 image.gameObject.SetActive(true);
@@ -25,23 +28,18 @@ namespace CWH
             {
                 image.gameObject.SetActive(false);
             }
+            FadeOut();
+            OnFadeIn += FadeIn;
         }
 
-        private void Update()
+        private void OnDestroy()
         {
-            if (Keyboard.current.kKey.wasPressedThisFrame)
-            {
-                if (IsFadeIn)
-                    FadeOut();
-                else
-                    FadeIn();
-            }
+            OnFadeIn -= FadeIn;
         }
 
         public void FadeOut()
         {
             image.gameObject.SetActive(true);
-            Debug.Log("FadeCanvasController_ Fade Out 시작");
             StartCoroutine(CoFadeOut());
             IsFadeIn = false;
         }
@@ -49,12 +47,11 @@ namespace CWH
         public void FadeIn()
         {
             image.gameObject.SetActive(true);
-            Debug.Log("FadeCanvasController_ Fade In 시작");
             StartCoroutine(CoFadeIn());
             IsFadeIn = true;
         }
 
-        IEnumerator CoFadeIn()
+        public IEnumerator CoFadeIn()
         {
             float elapsedTime = 0f;
             float fadedTime = 1f;
@@ -69,11 +66,10 @@ namespace CWH
             }
 
             image.canvasRenderer.SetAlpha(1f);
-            Debug.Log("Fade In 끝");
-
-            // 페이드인 완료 후 다음 이미지로 변경
-            currentIndex = (currentIndex + 1) % sprites.Length;
-            background.sprite = sprites[currentIndex];
+            if(typing.NeedChangeScene)
+                typing.OnChangeScene?.Invoke();
+            FadeOut();
+            texts.SetActive(false);
 
             yield break;
         }
@@ -93,8 +89,9 @@ namespace CWH
             }
 
             image.canvasRenderer.SetAlpha(0f);
-            Debug.Log("Fade Out 끝");
             image.gameObject.SetActive(false);
+            if(typing.NeedChangeScene)
+                StartCoroutine(typing.PlayTypingEffect());
             yield break;
         }
     }
